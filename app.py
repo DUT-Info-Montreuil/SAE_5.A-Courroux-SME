@@ -69,11 +69,6 @@ def ressource_protégée():
     current_user = get_jwt_identity()
     return {'message': 'Ceci est une ressource protégée', 'user': current_user}
 
-
-
-
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column(db.String(80), unique=True, nullable=False)
@@ -104,6 +99,121 @@ def get_user_by_identifier(identifier):
     user = User.query.filter_by(identifier=identifier).first()
     return user
 
+class Enseignant(db.Model):
+    initial = db.Column(db.String(15), primary_key=True)
+
+    def __init__(self, name, lastname):
+        self.set_initial
+    
+    def set_initial(self, name, lastname):
+        namelist=name.split(" ")
+        lastnamelist=lastname.split(" ")
+        initial=""
+        indexChar = 0
+        for c in namelist:
+            initial+=c[indexChar]
+        for c in lastnamelist:
+            initial+=c[indexChar] 
+        
+        initialExist = Enseignant.query.filter_by(initial=initial).first()
+
+        while initialExist is not None:
+            indexChar+=1
+            initial = ""
+
+            for c in namelist:
+                for i in range(indexChar):
+                    initial+=c[i]
+            for c in lastnamelist:
+                initial+=c[0]
+            
+            initialExist = Enseignant.query.filter_by(initial=initial).first()
+        
+        return initial
+    
+class Etudiant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    def __init__(self, id):
+        self.id = id
+    
+class Ressources(db.Model):
+    initial = db.Column(db.String(5), primary_key=True)
+    name = db.column(db.String(64), nullable=False)
+
+    def __init__(self, initial, name):
+        self.name=name
+        self.initial = set_initial(name)
+
+    def set_initial(name):
+        namelist = name.split(" ")
+        initial=""
+
+        if namelist.length>1:
+            for c in namelist:
+                initial+=c[0]
+        else:
+            initial+=name[0]+name[1]
+
+        return initial
+
+class Salle(db.Model):
+    nom = db.Column(db.String(64), primary_key=True)
+    ordi = db.Column(db.Integer, nullable=True)
+    tableauNumerique = db.Column(db.Integer, nullable=True)
+    videoProjecteur = db.Column(db.Integer, nullable=True)
+
+    def __init__(self, name, ordi, tableauNumerique, videoProjecteur):
+        self.nom = name
+        self.ordi = ordi
+        self.tableauNumerique = tableauNumerique
+        self.videoProjecteur = videoProjecteur
+
+class Promotion(db.Model):
+    name = db.Column(db.String(64), primary_key=True)
+
+    def __init__(self, name):
+        self.name = name
+
+class Groupe(db.Model):
+    idGroupe = db.Column(db.String(64), primary_key=True)
+
+    def __init__(self, idGroupe):
+        self.idGroupe =idGroupe
+    
+class Cours(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, nullable=False)
+    heureDebut = db.Column(db.Time, nullable=False)
+    heureFin = db.Column(db.Time, nullable=False)
+    enseignant = db.Column(Enseignant, nullable=False)
+    ressource = db.Column(Ressources, nullable=False)
+    promotion = db.Column(Promotion, nullable=False)
+    groupe = db.Column(Groupe, nullable=True)
+    salle = db.Column(Salle, nullable=False)
+    appelEffectue = db.Column(db.Boolean, nullable=True)
+
+    def __init__(self, date, heureDebut, heureFin, enseignant, ressource, promotion, groupe, salle, appelEffectue):
+        self.date = date
+        self.heureDebut = heureDebut
+        self.heureFin = heureFin
+        self.enseignant = enseignant
+        self.ressource = ressource
+        self.promotion = promotion
+        self.groupe = groupe
+        self.salle = salle
+        self.appelEffectue = appelEffectue
+
+    def appelFait(self, appelFait):
+        self.appelEffectue = appelFait 
+
+class Absence(db.Model):
+    idEtudiant = db.Column(db.Integer, primary_key=True)
+    idCour = db.Column(db.Integer, primary_key=True)
+
+    def __init__(self, idEtudiant, idCour):
+        self.idEtudiant = idEtudiant
+        self.idCour = idCour
 
 with app.app_context():
     db.create_all()
