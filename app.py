@@ -70,6 +70,8 @@ def ressource_protégée():
     return {'message': 'Ceci est une ressource protégée', 'user': current_user}
 
 class User(db.Model):
+    __tablename__= "user"
+
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
@@ -100,7 +102,10 @@ def get_user_by_identifier(identifier):
     return user
 
 class Enseignant(db.Model):
+    __tablename__= "enseignant"
+
     initial = db.Column(db.String(15), primary_key=True)
+    cours = db.relationship('Cours', backref='enseignant', lazy='dynamic')
 
     def __init__(self, name, lastname):
         self.set_initial
@@ -132,16 +137,21 @@ class Enseignant(db.Model):
         return initial
     
 class Etudiant(db.Model):
+    __tablename__= "etudiant"
+
     id = db.Column(db.Integer, primary_key=True)
 
     def __init__(self, id):
         self.id = id
     
 class Ressources(db.Model):
-    initial = db.Column(db.String(5), primary_key=True)
-    name = db.column(db.String(64), nullable=False)
+    __tablename__= "ressources"
 
-    def __init__(self, initial, name):
+    initial = db.Column(db.String(5), primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    cours = db.relationship('Cours', backref='ressource', lazy='dynamic')
+
+    def __init__(self, name):
         self.name=name
         self.initial = set_initial(name)
 
@@ -158,10 +168,14 @@ class Ressources(db.Model):
         return initial
 
 class Salle(db.Model):
+    __tablename__= "salle"
+
     nom = db.Column(db.String(64), primary_key=True)
     ordi = db.Column(db.Integer, nullable=True)
     tableauNumerique = db.Column(db.Integer, nullable=True)
     videoProjecteur = db.Column(db.Integer, nullable=True)
+    cours = db.relationship('Cours', backref='salle', lazy='dynamic')
+
 
     def __init__(self, name, ordi, tableauNumerique, videoProjecteur):
         self.nom = name
@@ -170,27 +184,35 @@ class Salle(db.Model):
         self.videoProjecteur = videoProjecteur
 
 class Promotion(db.Model):
+    __tablename__= "promotion"
+
     name = db.Column(db.String(64), primary_key=True)
+    cours = db.relationship('Cours', backref='promotion', lazy='dynamic')
 
     def __init__(self, name):
         self.name = name
 
 class Groupe(db.Model):
+    __tablename__= "groupe"
+
     idGroupe = db.Column(db.String(64), primary_key=True)
+    cours = db.relationship('Cours', backref='groupe', lazy='dynamic')
 
     def __init__(self, idGroupe):
         self.idGroupe =idGroupe
     
 class Cours(db.Model):
+
+    __tablename__= "cours"
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date, nullable=False)
     heureDebut = db.Column(db.Time, nullable=False)
     heureFin = db.Column(db.Time, nullable=False)
-    enseignant = db.Column(Enseignant, nullable=False)
-    ressource = db.Column(Ressources, nullable=False)
-    promotion = db.Column(Promotion, nullable=False)
-    groupe = db.Column(Groupe, nullable=True)
-    salle = db.Column(Salle, nullable=False)
+    enseignant = db.Column(db.String(15), db.ForeignKey('enseignant.initial'))
+    ressources = db.Column(db.String(64), db.ForeignKey('ressources.name'))
+    promotion = db.Column(db.String(64), db.ForeignKey('promotion.name'))
+    groupe = db.Column(db.String(64), db.ForeignKey('groupe.idGroupe'))
+    salle = db.Column(db.String(64), db.ForeignKey("salle.nom"))
     appelEffectue = db.Column(db.Boolean, nullable=True)
 
     def __init__(self, date, heureDebut, heureFin, enseignant, ressource, promotion, groupe, salle, appelEffectue):
@@ -208,6 +230,8 @@ class Cours(db.Model):
         self.appelEffectue = appelFait 
 
 class Absence(db.Model):
+    __tablename__= "absence"
+
     idEtudiant = db.Column(db.Integer, primary_key=True)
     idCour = db.Column(db.Integer, primary_key=True)
 
