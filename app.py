@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 import bcrypt
 from flask_migrate import Migrate
+from sqlalchemy import text, Row
 
 
 
@@ -69,6 +70,31 @@ def ressource_protégée():
     current_user = get_jwt_identity()
     return {'message': 'Ceci est une ressource protégée', 'user': current_user}
 
+
+@app.route('/<string:groupe_tp_user>', methods=['GET'])
+def get_schedule(groupe_tp_user):
+    get_lessons_query = text('SELECT * FROM cours WHERE groupe = :groupe')
+
+    #groupe = Cours.query.get('groupe_tp_user')
+    if not isinstance(groupe_tp_user, str):
+        print('Le groupe doit être une chaîne de caractères.')
+
+    result = db.session.execute(get_lessons_query, params={'groupe': groupe_tp_user})
+
+    lessons = [row_to_dict(row) for row in result.fetchall()]
+
+    return lessons
+
+def row_to_dict(row: Row) -> dict:
+    """Converts a SQLAlchemy Row object to a Python dictionary."""
+
+    try:
+        columns = row.__table__.columns
+    except AttributeError:
+        columns = []
+
+    return {col.name: getattr(row, col.name) for col in columns}
+
 class User(db.Model):
     __tablename__= "user"
 
@@ -105,11 +131,12 @@ class Enseignant(db.Model):
     __tablename__= "enseignant"
 
     initial = db.Column(db.String(15), primary_key=True)
-    cours = db.relationship('Cours', backref='enseignant', lazy='dynamic')
+    cours = db.relationship('Cours', backref='enseignant_initial', lazy='dynamic')
+    
 
     def __init__(self, name, lastname):
-        self.set_initial
-    
+        self.initial = self.set_initial(name, lastname)
+
     def set_initial(self, name, lastname):
         namelist=name.split(" ")
         lastnamelist=lastname.split(" ")
@@ -149,7 +176,7 @@ class Ressources(db.Model):
 
     initial = db.Column(db.String(5), primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    cours = db.relationship('Cours', backref='ressource', lazy='dynamic')
+    cours = db.relationship('Cours', backref='ressource_initial', lazy='dynamic')
 
     def __init__(self, name):
         self.name=name
@@ -174,7 +201,7 @@ class Salle(db.Model):
     ordi = db.Column(db.Integer, nullable=True)
     tableauNumerique = db.Column(db.Integer, nullable=True)
     videoProjecteur = db.Column(db.Integer, nullable=True)
-    cours = db.relationship('Cours', backref='salle', lazy='dynamic')
+    cours = db.relationship('Cours', backref='salle_name', lazy='dynamic')
 
 
     def __init__(self, name, ordi, tableauNumerique, videoProjecteur):
@@ -187,7 +214,7 @@ class Promotion(db.Model):
     __tablename__= "promotion"
 
     name = db.Column(db.String(64), primary_key=True)
-    cours = db.relationship('Cours', backref='promotion', lazy='dynamic')
+    cours = db.relationship('Cours', backref='promotion_name', lazy='dynamic')
 
     def __init__(self, name):
         self.name = name
@@ -196,7 +223,7 @@ class Groupe(db.Model):
     __tablename__= "groupe"
 
     idGroupe = db.Column(db.String(64), primary_key=True)
-    cours = db.relationship('Cours', backref='groupe', lazy='dynamic')
+    cours = db.relationship('Cours', backref='groupe_name', lazy='dynamic')
 
     def __init__(self, idGroupe):
         self.idGroupe =idGroupe
@@ -209,17 +236,17 @@ class Cours(db.Model):
     heureDebut = db.Column(db.Time, nullable=False)
     heureFin = db.Column(db.Time, nullable=False)
     enseignant = db.Column(db.String(15), db.ForeignKey('enseignant.initial'))
-    ressources = db.Column(db.String(64), db.ForeignKey('ressources.name'))
+    ressource = db.Column(db.String(64), db.ForeignKey('ressources.initial'))
     promotion = db.Column(db.String(64), db.ForeignKey('promotion.name'))
     groupe = db.Column(db.String(64), db.ForeignKey('groupe.idGroupe'))
     salle = db.Column(db.String(64), db.ForeignKey("salle.nom"))
     appelEffectue = db.Column(db.Boolean, nullable=True)
 
-    def __init__(self, date, heureDebut, heureFin, enseignant, ressource, promotion, groupe, salle, appelEffectue):
+    def __init__(self, date, heureDebut, heureFin, enseignant_initial, ressource, promotion, groupe, salle, appelEffectue):
         self.date = date
         self.heureDebut = heureDebut
         self.heureFin = heureFin
-        self.enseignant = enseignant
+        self.enseignant_initial = enseignant_initial
         self.ressource = ressource
         self.promotion = promotion
         self.groupe = groupe
