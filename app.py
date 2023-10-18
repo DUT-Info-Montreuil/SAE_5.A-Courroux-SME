@@ -6,6 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 import bcrypt
 from flask_migrate import Migrate
 from sqlalchemy import text, Row
+from sqlalchemy.orm import session
+import sqlalchemy
 
 
 
@@ -73,17 +75,16 @@ def ressource_protégée():
 
 @app.route('/<string:groupe_tp_user>', methods=['GET'])
 def get_schedule(groupe_tp_user):
+
+    engine = sqlalchemy.create_engine(os.environ.get('DATABASE_URL'))
     get_lessons_query = text('SELECT * FROM cours WHERE groupe = :groupe')
 
-    #groupe = Cours.query.get('groupe_tp_user')
-    if not isinstance(groupe_tp_user, str):
-        print('Le groupe doit être une chaîne de caractères.')
+    # Create a connection and execute the query
+    with engine.connect() as connection:
+        result = connection.execute(get_lessons_query, {'groupe':groupe_tp_user})
+        lessons = result.fetchall()
 
-    result = db.session.execute(get_lessons_query, params={'groupe': groupe_tp_user})
-
-    lessons = [row_to_dict(row) for row in result.fetchall()]
-
-    return lessons
+    return str(lessons)
 
 def row_to_dict(row: Row) -> dict:
     """Converts a SQLAlchemy Row object to a Python dictionary."""
