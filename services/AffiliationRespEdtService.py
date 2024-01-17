@@ -1,6 +1,7 @@
 from database.config import db
 from models.relations.affiliation_resp_edt import affiliation_resp_edt
 from models.Promotion import Promotion
+from services.PromotionService import PromotionService
 
 class AffiliationRespEdtService:
 
@@ -26,8 +27,9 @@ class AffiliationRespEdtService:
 
       result = query.all()
       promos = [id_promo for id_resp, id_promo in result]
-
+      promos = [PromotionService.get_promo_by_id(promoId) for promoId in promos]
       return promos
+
   @staticmethod
   def get_promo_by_respedt(idResp, idPromo):
     return affiliation_resp_edt.query.filter_by(id_resp=idResp).filter_by(id_promo=idPromo).all()

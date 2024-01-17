@@ -1,5 +1,9 @@
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from services.AffiliationRespEdtService import AffiliationRespEdtService
+from services.ResponsableEdtService import ResponsableEdtService
+from services.UserService import UserService
+from models.User import User
 
 affiliationrespedt_bp = Blueprint('affiliationrespedt', __name__)
 
@@ -27,12 +31,12 @@ def get_promos_for_respedt(idResp):
 
     try:
         # Associer un respEdt à une promo
-        affiliate_respEdt = AffiliationRespEdtService.get_promos_for_respedt(idResp)
+        promotions = AffiliationRespEdtService.get_promos_for_respedt(idResp)
 
-        if not affiliate_respEdt:
+        if not promotions:
             return jsonify({'error': 'Promotions not found'}),201
 
-        return jsonify(affiliate_respEdt),200
+        return jsonify([promotion.to_dict() for promotion in promotions]),200
     except Exception as e:
         return jsonify({'error': str(e)}),403
 
@@ -48,4 +52,23 @@ def delete_affiliate_respedt_to_promo(idResp):
         return jsonify({"message": "RespEdtPromo supprimé du groupe avec succès"}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 403
+    
+
+@affiliationrespedt_bp.route('/responsable/promos', methods=['GET'])
+@jwt_required()
+def get_promos_for_respedt(idUser):
+
+    try:
+        # Associer un respEdt à une promo
+        current_user = get_jwt_identity()
+        user : User = UserService.get_by_id(current_user)
+        respEdt= ResponsableEdtService.get_by_userId(user.id)
+        promotions = AffiliationRespEdtService.get_promos_for_respedt(respEdt.id_resp)
+
+        if not promotions:
+            return jsonify({'error': 'Promotions not found'}),201
+
+        return jsonify([promotion.to_dict() for promotion in promotions]),200
+    except Exception as e:
+        return jsonify({'error': str(e)}),403
 
