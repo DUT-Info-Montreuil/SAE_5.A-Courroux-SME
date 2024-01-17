@@ -56,7 +56,7 @@ def delete_affiliate_respedt_to_promo(idResp):
 
 @affiliationrespedt_bp.route('/responsable/promos', methods=['GET'])
 @jwt_required()
-def get_promos_for_respedt_by_user(idUser):
+def get_promos_for_respedt_by_user():
 
     try:
         # Associer un respEdt à une promo
